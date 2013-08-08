@@ -1,28 +1,109 @@
 function DWShopBasket() {
+}
 
+DWShopBasket.prototype.currentBasket = null;
+DWShopBasket.prototype.etag = null;
+DWShopBasket.prototype.errorFunction = null;
+
+DWShopBasket.prototype.registerErrorHandler = function(errorHandler) {
+    this.errorFunction = errorHandler;
+}
+
+DWShopBasket.prototype.resourceUrl = function() {
+    return "basket/this";
+}
+
+DWShopBasket.prototype.resourceUrlWithAction = function(action) {
+    return this.resourceUrl() + "/" + action;
 }
 
 DWShopBasket.prototype.addToBasket = function(productId, quantity, callback) {
-		$.ajax({
-		  type: "POST",
-		  contentType: "application/json",
-		  data: "{product_id: \"" + productId + "\", quantity: " + quantity + "}",
-		  url: baseURL + "basket/this/add?" + urlParams,
-		  dataType: "json",
-		  success: callback,
-		  error: function(jqXHR, status, errmsg) {
-		  	$("#errmsg").addClass("alert alert-error");
-		  	$("#errmsg").html(status + "-" + errmsg + "<br/>" + jqXHR.responseJSON.fault.message + "<br/>" + jqXHR.responseJSON.fault.type + "<br/>");
-		  	$("#errmsg").append("<a class='btn' href='#' onclick='$(\"#errmsg\").empty();$(\"#errmsg\").removeClass();'>Clear</a>");
-		  }
-		});
+	return $.ajax({
+	  type: "POST",
+	  contentType: "application/json",
+	  data: "{product_id: \"" + productId + "\", quantity: " + quantity + "}",
+      headers: {"x-dw-client-id": clientId},
+	  url: baseURL + this.resourceUrlWithAction("add"),
+	  dataType: "json",
+	  success: callback, 
+      error: this.errorFunction
+	});
+}
+
+DWShopBasket.prototype.removeFromBasket = function(productId, callback) {
+    var patchData = null;
+    var items = this.currentBasket.product_items;
+    
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].product_id == productId) {
+            patchData = "{product_items:[{_delete_at:" + i + "}]}";     
+            break;
+        }
+    }
+    
+    if (patchData == null)
+        return;
+    
+    return this.sendUpdateToServer(patchData, callback);
+}
+
+DWShopBasket.prototype.updateQuantity = function(productId, quantity, callback) {
+    var patchData = null;
+    var items = this.currentBasket.product_items;
+    
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].product_id == productId) {
+            patchData = "{product_items:[{_at:" + i + ",quantity:" + quantity + "}]}";        
+            break;
+        }
+    }
+    
+    if (patchData == null)
+        return;
+        
+    return this.sendUpdateToServer(patchData, callback);
+}
+
+DWShopBasket.prototype.updateQuantities = function(updates, callback) {
+    var patchData = "{product_items:[";
+    var items = this.currentBasket.product_items;
+    
+    for (var u = 0; u < updates.length; u++) {
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].product_id == updates[u].product_id) {
+                patchData += "{_at:" + i + ",quantity:" + updates[u].quantity + "}";
+                break;    
+            }
+        }
+        if (u < updates.length - 1)
+            patchData += ",";
+    }
+    
+    patchData += "]}";
+    
+    return this.sendUpdateToServer(patchData, callback);
+}
+
+DWShopBasket.prototype.sendUpdateToServer = function(patchData, callback) {
+    return $.ajax({
+      type: "PATCH",
+      contentType: "application/json",
+      data: patchData,
+      headers: {"If-Match": this.etag, "x-dw-client-id": clientId},
+      url: baseURL + this.resourceUrl(),
+      dataType: "json",
+      success: callback,
+      error: this.errorFunction
+    });
 }
 
 DWShopBasket.prototype.getBasket = function(callback) {
-	$.ajax({
+	return $.ajax({
 		type: "GET",
-		url: baseURL + "basket/this?" + urlParams,
+        headers: {"x-dw-client-id": clientId},
+		url: baseURL + this.resourceUrl(),
 		dataType: "json",
-		success: callback
+        success: callback,
+        error: this.errorFunction
 	});
 }

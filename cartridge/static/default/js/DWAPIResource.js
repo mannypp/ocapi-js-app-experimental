@@ -7,13 +7,9 @@ DWAPIResource.prototype.resourceUrl = function() {
 }
 
 DWAPIResource.prototype.resourceUrlWithId = function(id) {
-	return null;
+    return null;
 }
 
-DWAPIResource.prototype.retrieveResource = function() {
-	$.getScript(baseURL + this.resourceUrl() + "?" + urlParams + "&callback=parseCategoryResponse");
-}
-
-DWAPIResource.prototype.findById = function(id) {
-	$.getScript(baseURL + this.resourceUrlWithId(id) + "?" + urlParams + "&callback=parseResponse");
+DWAPIResource.prototype.resourceUrlWithAction = function(action) {
+    return null;
 }
