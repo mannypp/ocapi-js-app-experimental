@@ -1,6 +1,9 @@
 function DWShopProduct() {
-
+    DWAPIResource.call(this);
 }
+
+DWShopProduct.prototype = new DWAPIResource();
+DWShopProduct.prototype.constructor = DWShopProduct;
 
 DWShopProduct.prototype.resourceUrlWithId = function(id) {
 	return "products/" + id;
@@ -16,7 +19,9 @@ DWShopProduct.prototype.findByIdWithExpand = function(id, expand, callback) {
       headers: {"x-dw-client-id": clientId},
       url: baseURL + this.resourceUrlWithId(id) + "?expand=images,variations",
       dataType: "json",
-      success: callback});
+      success: callback,
+      error: errorFunction
+    });
 }
 
 DWShopProduct.prototype.loadProductLink = function(link, callback) {
@@ -25,5 +30,7 @@ DWShopProduct.prototype.loadProductLink = function(link, callback) {
       headers: {"x-dw-client-id": clientId},
 	  url: link + "?expand=images,variations",
 	  dataType: "json",
-	  success: callback});
+	  success: callback,
+      error: this.errorFunction
+	});
 }

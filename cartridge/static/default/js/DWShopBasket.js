@@ -1,13 +1,12 @@
 function DWShopBasket() {
+    DWAPIResource.call(this);
 }
+
+DWShopBasket.prototype = new DWAPIResource();
+DWShopBasket.prototype.constructor = DWShopBasket;
 
 DWShopBasket.prototype.currentBasket = null;
 DWShopBasket.prototype.etag = null;
-DWShopBasket.prototype.errorFunction = null;
-
-DWShopBasket.prototype.registerErrorHandler = function(errorHandler) {
-    this.errorFunction = errorHandler;
-}
 
 DWShopBasket.prototype.resourceUrl = function() {
     return "basket/this";

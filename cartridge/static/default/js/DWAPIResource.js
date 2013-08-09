@@ -1,5 +1,10 @@
 function DWAPIResource() {
+}
 
+DWAPIResource.prototype.errorFunction = null;
+
+DWAPIResource.prototype.registerErrorHandler = function(errorHandler) {
+    this.errorFunction = errorHandler;
 }
 
 DWAPIResource.prototype.resourceUrl = function() {

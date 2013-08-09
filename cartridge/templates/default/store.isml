@@ -5,26 +5,35 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
 	<script src="${URLUtils.staticURL('lib/bootstrap/js/bootstrap.min.js')}"></script>
 	<script src="${URLUtils.staticURL('js/dwconfig.js')}"></script>
-	<script src="${URLUtils.staticURL('js/DWShopCategory.js')}"></script>
+    <script src="${URLUtils.staticURL('js/DWAPIResource.js')}"></script>
+    <script src="${URLUtils.staticURL('js/DWShopCategory.js')}"></script>
 	<script src="${URLUtils.staticURL('js/DWShopProduct.js')}"></script>
 	<script src="${URLUtils.staticURL('js/DWShopProductSearch.js')}"></script>
-	<script src="${URLUtils.staticURL('js/DWShopBasket.js')}"></script>
+    <script src="${URLUtils.staticURL('js/DWShopBasket.js')}"></script>
+    <script src="${URLUtils.staticURL('js/DWShopContent.js')}"></script>
 
 	<link rel="stylesheet" media="screen" type="text/css" href="${URLUtils.staticURL('lib/bootstrap/css/bootstrap.min.css')}"/>
 	<link rel="stylesheet" type="text/css" href="${URLUtils.staticURL('css/nostyle.css')}"/>
 
 	<script>
 	var currentProduct = null;
-	var basket = new DWShopBasket();
+	
 	var lastCategory = "root";
 	var lastProduct = null;
+	var lastSearch = null;
+	
+    var basket = new DWShopBasket();
+	var category = new DWShopCategory();
+	var product = new DWShopProduct();
+	var productSearch = new DWShopProductSearch();
+	var content = new DWShopContent();
 	
 	function parseCategoryResponse(response, status, jqXHR) {
-		$("#result").empty();
-		$("#result").append("<div id='image'/><div id='name'/><p/><div id='page_description'/><div class='row-fluid' id='core'><div id='subcategories' class='span3'/></div><div id='categoryBackButton'/>");
+        setupCatalogPage();
 
 		lastCategory = response.id;
 		lastProduct = null;
+		lastSearch = null;
 
 		if (response.page_title)
 			window.document.title = response.page_title;
@@ -44,40 +53,29 @@
 			$("#nav1").append("<ul class='nav nav-list' id='nav2'>")
 			for (var i = 0; i < cat.length; i++) {
 				$("#nav2").append("<li id='" + cat[i].id + "'>");
-				$("#" + cat[i].id).append("<a href='#' onclick='var cat=new DWShopCategory();cat.findById(\"" + cat[i].id + "\", parseCategoryResponse);'>" + cat[i].name + "</a>");
+				$("#" + cat[i].id).append("<a href='#' onclick='category.findById(\"" + cat[i].id + "\", parseCategoryResponse);'>" + cat[i].name + "</a>");
 				//if (cat[i].hasOwnProperty("page_description"))
 				//	$("#" + cat[i].id).append("<div>" + cat[i].page_description + "</div>");
 			}
 		}
 
 		if (response.id != "root")
-			$("#categoryBackButton").append("<p/><a href='#' class='btn' onclick='var cat=new DWShopCategory();cat.findById(\"" + response.parent_category_id + "\", parseCategoryResponse);'>Back</a><p/>");
-
-		(new DWShopProductSearch()).search(response.id, parseProductsResponse);
+			$("#backButton").append("<p/><a href='#' class='btn' onclick='category.findById(\"" + response.parent_category_id + "\", parseCategoryResponse);'>Back</a><p/>");
+        else
+            content.findById("homepage", parseHomepageContentResponse);
+        
+		productSearch.search(response.id, parseProductsResponse);
 		
 		$("#result").append("</div>"); // row-fluid	
 	}
 
 	function parseProductsResponse(response, status, jqXHR) {
 		if (response.count > 0)
-			$("#core").append("<div id='products' class='span9'/><div id='productBackButton'/>");
-
-		var hits = response.hits;
-		var rowline = 0;
-		for (var i = 0; i < hits.length; i++) {
-			if (rowline == 0)
-				$("#products").append("<div class='row'>");
-			rowline++;
-			$("#products").append("<div id='" + hits[i].product_id + "' class='span3'></div>");
-			$("#" + hits[i].product_id).append("<a id='" + hits[i].product_id + "-anchor' href='#' onclick='var prd = new DWShopProduct();prd.loadProductLink(\"" + hits[i].link + "\", parseProductResponse)'>" + hits[i].product_name + "</a><p/>");
-			$("#" + hits[i].product_id + "-anchor").prepend("<img src='" + hits[i].image.link + "' onclick='" + hits[i].link + "' alt='" + hits[i].image.alt + "'/>");
-			if (rowline == 3 || i == hits.length-1) {
-				$("#products").append("</div>");
-				rowline = 0;
-			}
-		}
+			$("#core").append("<div id='products' class='span10'/><div id='productBackButton'/>");
+        
+        renderSearchHits(response);
 	}
-
+	
 	function parseProductResponse(response, status, jqXHR) {
 		$("#result").empty();
 		$("#result").append("<div class='row'><div class='span1'/><div id='image' class='span4'/><div class='span7'><div id='name'/><div id='brand'/><div id='page_description'/><p/><div id='quantity'/><div id='variations'/><div id='addToBasketButton'/><div id='productBackButton'/></div></div>");
@@ -85,6 +83,7 @@
 		currentProduct = response;
 		lastProduct = response.id;
 		lastCategory = null;
+		lastSearch = null;
 
 		var link = response.image_groups[0].images[0].link;
 		var alt = response.image_groups[0].images[0].alt;
@@ -106,9 +105,45 @@
 		}
 		
 		$("#addToBasketButton").append("<p/><a href='#' class='btn' onclick='addToBasket();'>Add To Basket</a>");
-		$("#productBackButton").append("<p/><a href='#' class='btn' onclick='var cat=new DWShopCategory();cat.findById(\"" + response.primary_category_id + "\", parseCategoryResponse);'>Back</a>");
+		$("#productBackButton").append("<p/><a href='#' class='btn' onclick='category.findById(\"" + response.primary_category_id + "\", parseCategoryResponse);'>Back</a>");
 	}
 	
+    function setupCatalogPage() {
+        var result = $("#result");
+        result.empty();
+        result.append("<div id='image'/><div id='name'/><p/><div id='page_description'/><div class='row-fluid' id='core'><div id='subcategories' class='span2'/></div><div id='backButton'/>");    
+    }
+
+	function parseSearchResponse(response, status, jqXHR) {
+        setupCatalogPage();
+        
+        lastSearch = response.query;
+        
+        if (response.count > 0)
+            $("#core").append("<div id='products' class='span9'/><div id='productBackButton'/>");        
+        
+        renderSearchHits(response);
+
+        $("#backButton").append("<p/><a href='#' class='btn' onclick='backButton();'>Back</a><p/>");
+    }
+    
+    function renderSearchHits(response) {
+        var hits = response.hits;
+        var rowline = 0;
+        for (var i = 0; i < hits.length; i++) {
+            if (rowline == 0)
+                $("#products").append("<div class='row'>");
+            rowline++;
+            $("#products").append("<div id='" + hits[i].product_id + "' class='span3'></div>");
+            $("#" + hits[i].product_id).append("<a id='" + hits[i].product_id + "-anchor' href='#' onclick='product.loadProductLink(\"" + hits[i].link + "\", parseProductResponse)'>" + hits[i].product_name + "</a><p/>");
+            $("#" + hits[i].product_id + "-anchor").prepend("<img src='" + hits[i].image.link + "' onclick='" + hits[i].link + "' alt='" + hits[i].image.alt + "'/>");
+            if (rowline == 3 || i == hits.length-1) {
+                $("#products").append("</div>");
+                rowline = 0;
+            }
+        }
+    }
+
 	function addToBasket() {
 		basket.addToBasket(determineVariant(), $("#quantityInput").val(), parseBasketResponse);
 	}
@@ -170,7 +205,7 @@
 		$("#buttons").append("<a class='btn' href='#' onclick='updateBasketQuantities();'>Update</a>");
 		$("#subtotal").append("<div class='span9'/><div class='span2 label label-info'>Subtotal:</div><div class='span1'>" + basket.currentBasket.product_sub_total + "</div>");
 		$("#total").append("<div class='span9'/><div class='span2 label label-info'>Total:</div><div class='span1'>" + basket.currentBasket.product_total + "</div>");
-        $("#moreButtons").append("<div class='span9'><a class='btn' href='#' onclick='cartBackButton();'>Continue Shopping</a></div>");
+        $("#moreButtons").append("<div class='span9'><a class='btn' href='#' onclick='backButton();'>Continue Shopping</a></div>");
         $("#moreButtons").append("<div class='span3'><a class='btn' href='#' onclick='alert(\"Not implemented yet\");'>Checkout</a></div>");
 	}
 	
@@ -185,20 +220,34 @@
        basket.updateQuantities(updates, parseBasketResponse).done(showBasket);
 	}
 	
-	function cartBackButton() {
+	function backButton() {
 		if (lastCategory != null)
-			(new DWShopCategory()).findById(lastCategory, parseCategoryResponse);
-		else if (lastProduct != null)
-			(new DWShopProduct()).findById(lastProduct, parseProductResponse);
+			category.findById(lastCategory, parseCategoryResponse);
+        else if (lastProduct != null)
+            product.findById(lastProduct, parseProductResponse);
+        else if (lastSearch != null)
+            productSearch.search(lastSearch, parseSearchResponse);
 	}
-
+	
+	function parseHomepageContentResponse(response, status, jqXHR) {
+	   $("#core").append("<div id='homepageContent' class='span10'/>");
+	   $("#homepageContent").html(response.c_body);
+	}
+	
+	function parseFooterResponse(response, status, jqXHR) {
+	   $("#footer").html(response.c_body);
+	}
+	
     function changeCSS(cssFile, cssLinkIndex) {
-     	var oldlink = document.getElementsByTagName("link").item(cssLinkIndex);
+        var links = document.getElementsByTagName("link");
+     	var oldlink = links.item(cssLinkIndex);
      	var newlink = document.createElement("link")
      	newlink.setAttribute("href", cssFile);
      	newlink.setAttribute("rel", "stylesheet");
      	newlink.setAttribute("type", "text/css");
-    	document.getElementsByTagName("head").item(0).replaceChild(newlink, oldlink);
+    	var heads = document.getElementsByTagName("head");
+    	var item = heads.item(0);
+    	item.replaceChild(newlink, oldlink);
     }
 
     function handleError(jqXHR, status, errmsg) {
@@ -219,9 +268,10 @@
     }
     
 	window.onload = function() {
-		(new DWShopCategory()).findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
+		category.findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
 		basket.registerErrorHandler(handleError);
 		basket.getBasket(parseBasketResponse);
+		content.findById("footer-copy", parseFooterResponse);
 	}
 	</script>
 </head>
@@ -236,7 +286,7 @@
 		<div id="search">&nbsp;
 		    <br/>
             <input id='searchBox' class='input-xlarge' type='text'/>
-            <a id='searchButton' class='btn' href='#' onclick='var search=new DWShopProductSearch();search.search($("#searchBox").val(),parseProductsResponse);'>Search</a>
+            <a id='searchButton' class='btn' href='#' onclick='var box=$("#searchBox");productSearch.search(box.val(),parseSearchResponse);'>Search</a>
 		</div>
 	</div>
     <div class="span2" id="cartContent"></div>
@@ -246,16 +296,18 @@
     <div class='span1'></div>
 	<div id="styleChangeButtons" class="span11">
 		Change Page Style with Links Below<br/>
-        <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/nostyle.css")}', 3);">No Style</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style1.css")}', 3);">Style 1</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style2.css")}', 3);">Style 2</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/mobile.css")}', 3);">Mobile</a>
+        <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/nostyle.css")}', 1);">No Style</a>
+		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style1.css")}', 1);">Style 1</a>
+		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style2.css")}', 1);">Style 2</a>
+		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/mobile.css")}', 1);">Mobile</a>
 	</div>
 </div>
 
 <div id="errmsg"></div>
 
 <div id="result" class="container-fluid"></div>
+
+<div class="container"><h6><dl id="footer"></dl></h6></div>
 
 </body>
 </html>
