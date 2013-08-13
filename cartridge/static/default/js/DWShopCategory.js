@@ -5,17 +5,10 @@ function DWShopCategory() {
 DWShopCategory.prototype = new DWAPIResource();
 DWShopCategory.prototype.constructor = DWShopCategory;
 
-DWShopCategory.prototype.resourceUrlWithId = function(id) {
-	return "categories/" + id;
+DWShopCategory.prototype.resourceUrl = function() {
+	return "categories";
 }
 
 DWShopCategory.prototype.findById = function(id, callback) {
-	return $.ajax({
-	  type: "GET",
-      headers: {"x-dw-client-id": clientId},
-	  url: baseURL + this.resourceUrlWithId(id) + "?levels=1",
-	  dataType: "json",
-	  success: callback,
-      error: this.errorFunction
-	});
+    return this.findWithUrl(baseURL + this.resourceUrlWithId(id) + "?levels=1", callback);
 }

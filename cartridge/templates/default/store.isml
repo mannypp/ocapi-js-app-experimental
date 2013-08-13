@@ -11,6 +11,7 @@
 	<script src="${URLUtils.staticURL('js/DWShopProductSearch.js')}"></script>
     <script src="${URLUtils.staticURL('js/DWShopBasket.js')}"></script>
     <script src="${URLUtils.staticURL('js/DWShopContent.js')}"></script>
+    <script src="${URLUtils.staticURL('js/DWShopStore.js')}"></script>
 
 	<link rel="stylesheet" media="screen" type="text/css" href="${URLUtils.staticURL('lib/bootstrap/css/bootstrap.min.css')}"/>
 	<link rel="stylesheet" type="text/css" href="${URLUtils.staticURL('css/nostyle.css')}"/>
@@ -27,6 +28,7 @@
 	var product = new DWShopProduct();
 	var productSearch = new DWShopProductSearch();
 	var content = new DWShopContent();
+	var store = new DWShopStore();
 	
 	function parseCategoryResponse(response, status, jqXHR) {
         setupCatalogPage();
@@ -135,7 +137,7 @@
                 $("#products").append("<div class='row'>");
             rowline++;
             $("#products").append("<div id='" + hits[i].product_id + "' class='span3'></div>");
-            $("#" + hits[i].product_id).append("<a id='" + hits[i].product_id + "-anchor' href='#' onclick='product.loadProductLink(\"" + hits[i].link + "\", parseProductResponse)'>" + hits[i].product_name + "</a><p/>");
+            $("#" + hits[i].product_id).append("<a id='" + hits[i].product_id + "-anchor' href='#' onclick='product.loadProductLink(\"" + hits[i].link + "\", parseProductResponse)'><div>" + hits[i].product_name + "</div></a><p/>");
             $("#" + hits[i].product_id + "-anchor").prepend("<img src='" + hits[i].image.link + "' onclick='" + hits[i].link + "' alt='" + hits[i].image.alt + "'/>");
             if (rowline == 3 || i == hits.length-1) {
                 $("#products").append("</div>");
@@ -209,6 +211,28 @@
         $("#moreButtons").append("<div class='span3'><a class='btn' href='#' onclick='alert(\"Not implemented yet\");'>Checkout</a></div>");
 	}
 	
+	function parseStoreResponse(response, status, jqXHR) {
+        $("#result").empty();
+        $("#result").append("<p/><div id='storeLocatorContent'/><div id='backButton'/>");
+        
+        for (var i = 0; i < response.count; i++) {
+            var s = response.data[i];
+            $("#storeLocatorContent").append("<div class='container' id='" + s.id + "'></div>");
+            
+            var row = $("#" + s.id);
+            row.append("<div>" + s.name + "</div>");
+            row.append("<div>" + s.address1 + "</div>");
+            row.append("<div>" + s.city + "</div>");
+            row.append("<div>" + s.state_code + "</div>");
+            row.append("<div>" + s.postal_code + "</div>");
+            row.append("<div>&nbsp;</div>");
+            row.append("<div>" + s.store_hours + "</div>");
+            row.append("<div>" + s.store_events + "</div>");
+        }
+        
+        $("#backButton").append("<a class='btn' href='#' onclick='backButton();'>Back</a>");
+	}
+	
 	function updateBasketQuantities() {
 	   var items = basket.currentBasket.product_items;
 	   var updates = new Array();
@@ -224,9 +248,11 @@
 		if (lastCategory != null)
 			category.findById(lastCategory, parseCategoryResponse);
         else if (lastProduct != null)
-            product.findById(lastProduct, parseProductResponse);
+            product.findByIdWithExpand(lastProduct, "images,variations", parseProductResponse);
         else if (lastSearch != null)
             productSearch.search(lastSearch, parseSearchResponse);
+        else
+            category.findById("root", parseCategoryResponse);
 	}
 	
 	function parseHomepageContentResponse(response, status, jqXHR) {
@@ -267,10 +293,24 @@
         $("#errmsg").empty().removeClass();
     }
     
+    function getURLParam(name) {
+        return decodeURI((RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]);
+    }
+
 	window.onload = function() {
-		category.findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
+        var catid = getURLParam("cat");
+        var prdid = getURLParam("prd");
+        
+        if (catid == "null" && prdid == "null")
+            category.findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
+        else if (catid != "null")
+            category.findById(catid, parseCategoryResponse);
+        else if (prdid != "null")
+            product.findByIdWithExpand(prdid, "images,variations", parseProductResponse);
+		
 		basket.registerErrorHandler(handleError);
 		basket.getBasket(parseBasketResponse);
+		
 		content.findById("footer-copy", parseFooterResponse);
 	}
 	</script>
@@ -282,14 +322,20 @@
 	<div class="span4">
 		<h3><a href="${URLUtils.url('')}">OCAPI Javascript Store</a></h3>
 	</div>
-	<div class="span5">
-		<div id="search">&nbsp;
-		    <br/>
+    <div class="span1">&nbsp;</div>
+    <div class="span2" id="storeLocator"><br/><a href="#" onclick="store.findWithUrl(baseURL + store.resourceUrl() + '?country_code=US&postal_code=01803', parseStoreResponse);">Store Locator</a></div>
+    <div class="span2" id="account"><br/><a href='#' onclick=''>My Account</a></div>
+    <div class="span2" id="cartContent"></div>
+</div>
+<div class="row">
+    <div class="span1">&nbsp;</div>
+    <div class="span10">
+        <div id="search">
             <input id='searchBox' class='input-xlarge' type='text'/>
             <a id='searchButton' class='btn' href='#' onclick='var box=$("#searchBox");productSearch.search(box.val(),parseSearchResponse);'>Search</a>
-		</div>
-	</div>
-    <div class="span2" id="cartContent"></div>
+        </div>
+    </div>
+    <div class="span1">&nbsp;</div>
 </div>
 
 <div class="row">
@@ -307,7 +353,7 @@
 
 <div id="result" class="container-fluid"></div>
 
-<div class="container"><h6><dl id="footer"></dl></h6></div>
+<div id="footer" class="container"></div>
 
 </body>
 </html>

@@ -5,22 +5,20 @@ function DWShopProduct() {
 DWShopProduct.prototype = new DWAPIResource();
 DWShopProduct.prototype.constructor = DWShopProduct;
 
-DWShopProduct.prototype.resourceUrlWithId = function(id) {
-	return "products/" + id;
-}
-
-DWShopProduct.prototype.findById = function(id, callback) {
-    return this.findByIdWithExpand(id, null, callback);
+DWShopProduct.prototype.resourceUrl = function() {
+	return "products";
 }
 
 DWShopProduct.prototype.findByIdWithExpand = function(id, expand, callback) {
+    var url = baseURL + this.resourceUrlWithId(id) + (expand == null ? "" : "?expand=" + expand);
+    
     return $.ajax({
       type: "GET",
       headers: {"x-dw-client-id": clientId},
-      url: baseURL + this.resourceUrlWithId(id) + "?expand=images,variations",
+      url: url,
       dataType: "json",
       success: callback,
-      error: errorFunction
+      error: this.errorFunction
     });
 }
 

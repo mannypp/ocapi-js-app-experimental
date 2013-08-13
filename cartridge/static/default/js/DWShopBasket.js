@@ -97,12 +97,5 @@ DWShopBasket.prototype.sendUpdateToServer = function(patchData, callback) {
 }
 
 DWShopBasket.prototype.getBasket = function(callback) {
-	return $.ajax({
-		type: "GET",
-        headers: {"x-dw-client-id": clientId},
-		url: baseURL + this.resourceUrl(),
-		dataType: "json",
-        success: callback,
-        error: this.errorFunction
-	});
+    return this.retrieveResource(callback);
 }
