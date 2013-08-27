@@ -22,6 +22,7 @@
 	var lastCategory = "root";
 	var lastProduct = null;
 	var lastSearch = null;
+	var lastPostalCode = null;
 	
     var basket = new DWShopBasket();
 	var category = new DWShopCategory();
@@ -195,15 +196,17 @@
 		$("#basket").append("<div class='row'><div class='span12'>&nbsp;</div></div><div class='row'><div class='span12 label label-info'>Shopping Basket</div></div>");		
 		$("#basket").append("<table id='basketTable' class='table table-striped'><thead><tr><th>Quantity</th><th>Product</th><th>Item Price</th><th>Total Price</th><th>Remove</th></tr></thead><tbody id='basketTableBody'/></table>");
 
-		var items = basket.currentBasket.product_items;
-		for (var i = 0; i < items.length; i++) {
-			$("#basketTableBody").append("<tr id='" + items[i].product_id + "'/>");
-			var row = $("#" + items[i].product_id);
-			row.append("<td><input id='basketItem" + i + "' type='text' class='input-small' value='" + items[i].quantity + "'/></td>");
-			row.append("<td>" + items[i].product_name + "</td><td>" + items[i].base_price + "</td><td>" + items[i].price + "</td>");
-			row.append("<td><a class='btn' href='#' onclick='basket.removeFromBasket(\"" + items[i].product_id + "\",parseBasketResponse).done(showBasket);'>X</a></td>");
-		}
-		
+        if (basket != null && basket.currentBasket != null) {
+			var items = basket.currentBasket.product_items;
+			for (var i = 0; i < items.length; i++) {
+				$("#basketTableBody").append("<tr id='" + items[i].product_id + "'/>");
+				var row = $("#" + items[i].product_id);
+				row.append("<td><input id='basketItem" + i + "' type='text' class='input-small' value='" + items[i].quantity + "'/></td>");
+				row.append("<td>" + items[i].product_name + "</td><td>" + items[i].base_price + "</td><td>" + items[i].price + "</td>");
+				row.append("<td><a class='btn' href='#' onclick='basket.removeFromBasket(\"" + items[i].product_id + "\",parseBasketResponse).done(showBasket);'>X</a></td>");
+			}
+        }
+        		
 		$("#buttons").append("<a class='btn' href='#' onclick='updateBasketQuantities();'>Update</a>");
 		$("#subtotal").append("<div class='span9'/><div class='span2 label label-info'>Subtotal:</div><div class='span1'>" + basket.currentBasket.product_sub_total + "</div>");
 		$("#total").append("<div class='span9'/><div class='span2 label label-info'>Total:</div><div class='span1'>" + basket.currentBasket.product_total + "</div>");
@@ -211,13 +214,39 @@
         $("#moreButtons").append("<div class='span3'><a class='btn' href='#' onclick='alert(\"Not implemented yet\");'>Checkout</a></div>");
 	}
 	
-	function parseStoreResponse(response, status, jqXHR) {
+    function updateBasketQuantities() {
+       var items = basket.currentBasket.product_items;
+       var updates = new Array();
+       for (var i = 0; i < items.length; i++) {
+           var newQuantity = $("#basketItem" + i).val();
+           if (newQuantity != items[i].quantity)
+               updates.push({product_id: items[i].product_id, quantity: newQuantity});
+       }
+       basket.updateQuantities(updates, parseBasketResponse).done(showBasket);
+    }
+    
+    function findStores() {
+        lastPostalCode = $("#storeLocatorInput").val();
+        store.findWithUrl(baseURL + store.resourceUrl() + '?country_code=US&postal_code=' + lastPostalCode, parseStoreResponse);
+    }
+    
+	function showStoreLocator() {
         $("#result").empty();
         $("#result").append("<p/><div id='storeLocatorContent'/><div id='backButton'/>");
         
+        if (lastPostalCode == null)
+            $("#storeLocatorContent").append("Enter Postal Code: <input id='storeLocatorInput' type='text' value=''/><a class='btn' id='storeLocatorButton' href='#' onclick='findStores();'>Find</a>");
+        else
+            store.findWithUrl(baseURL + store.resourceUrl() + '?country_code=US&postal_code=' + lastPostalCode, parseStoreResponse);        
+	}
+	
+	function parseStoreResponse(response, status, jqXHR) {
+        $("#result").empty();
+        $("#result").append("<p/><a href='#' onclick='lastPostalCode = null;showStoreLocator();'>Clear Postal Code</a><div id='storeLocatorContent'/><div id='backButton'/>");
+        
         for (var i = 0; i < response.count; i++) {
             var s = response.data[i];
-            $("#storeLocatorContent").append("<div class='container' id='" + s.id + "'></div>");
+            $("#storeLocatorContent").append("<p/><div class='container' id='" + s.id + "'></div>");
             
             var row = $("#" + s.id);
             row.append("<div>" + s.name + "</div>");
@@ -233,15 +262,8 @@
         $("#backButton").append("<a class='btn' href='#' onclick='backButton();'>Back</a>");
 	}
 	
-	function updateBasketQuantities() {
-	   var items = basket.currentBasket.product_items;
-	   var updates = new Array();
-	   for (var i = 0; i < items.length; i++) {
-	       var newQuantity = $("#basketItem" + i).val();
-	       if (newQuantity != items[i].quantity)
-	           updates.push({product_id: items[i].product_id, quantity: newQuantity});
-	   }
-       basket.updateQuantities(updates, parseBasketResponse).done(showBasket);
+	function showAccount() {
+	   alert("Not implemented yet");
 	}
 	
 	function backButton() {
@@ -300,17 +322,24 @@
 	window.onload = function() {
         var catid = getURLParam("cat");
         var prdid = getURLParam("prd");
+        var fcn = getURLParam("fcn");
         
-        if (catid == "null" && prdid == "null")
+        basket.registerErrorHandler(handleError);
+        basket.getBasket(parseBasketResponse);
+
+        if (fcn == "storeLocator")
+            showStoreLocator();
+        else if (fcn == "account")
+            showAccount();
+        else if (fcn == "basket")
+            showBasket();
+        else if (catid == "null" && prdid == "null")
             category.findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
         else if (catid != "null")
             category.findById(catid, parseCategoryResponse);
         else if (prdid != "null")
             product.findByIdWithExpand(prdid, "images,variations", parseProductResponse);
-		
-		basket.registerErrorHandler(handleError);
-		basket.getBasket(parseBasketResponse);
-		
+				
 		content.findById("footer-copy", parseFooterResponse);
 	}
 	</script>
@@ -323,8 +352,8 @@
 		<h3><a href="${URLUtils.url('')}">OCAPI Javascript Store</a></h3>
 	</div>
     <div class="span1">&nbsp;</div>
-    <div class="span2" id="storeLocator"><br/><a href="#" onclick="store.findWithUrl(baseURL + store.resourceUrl() + '?country_code=US&postal_code=01803', parseStoreResponse);">Store Locator</a></div>
-    <div class="span2" id="account"><br/><a href='#' onclick=''>My Account</a></div>
+    <div class="span2" id="storeLocator"><br/><a href="#" onclick="showStoreLocator();">Store Locator</a></div>
+    <div class="span2" id="account"><br/><a href='#' onclick='showAccount();'>My Account</a></div>
     <div class="span2" id="cartContent"></div>
 </div>
 <div class="row">
@@ -342,10 +371,10 @@
     <div class='span1'></div>
 	<div id="styleChangeButtons" class="span11">
 		Change Page Style with Links Below<br/>
-        <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/nostyle.css")}', 1);">No Style</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style1.css")}', 1);">Style 1</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style2.css")}', 1);">Style 2</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/mobile.css")}', 1);">Mobile</a>
+        <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/nostyle.css")}', 3);">No Style</a>
+		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style1.css")}', 3);">Style 1</a>
+		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style2.css")}', 3);">Style 2</a>
+		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/mobile.css")}', 3);">Mobile</a>
 	</div>
 </div>
 
