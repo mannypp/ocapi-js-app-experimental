@@ -7,7 +7,7 @@ DWShopProductSearch.prototype.constructor = DWShopProductSearch;
 
 DWShopProductSearch.prototype.resourceUrl = function() {
 	return "product_search";
-}
+};
 
 DWShopProductSearch.prototype.search = function(query, callback) {
 	return $.ajax({
@@ -18,4 +18,4 @@ DWShopProductSearch.prototype.search = function(query, callback) {
 	  success: callback,
       error: this.errorFunction
 	});
-}
+};

@@ -7,4 +7,4 @@ DWShopContent.prototype.constructor = DWShopContent;
 
 DWShopContent.prototype.resourceUrl = function() {
     return "content";
-}
+};

@@ -7,7 +7,7 @@ DWShopAccount.prototype.constructor = DWShopAccount;
 
 DWShopAccount.prototype.resourceUrl = function(id) {
     return "account";
-}
+};
 
 DWShopAccount.prototype.login = function(username, password, callback) {
     var url = secureBaseURL + this.resourceUrlWithAction("login");
@@ -26,7 +26,7 @@ DWShopAccount.prototype.login = function(username, password, callback) {
       success: callback, 
       error: this.errorFunction
     });*/
-}
+};
 
 DWShopAccount.prototype.logout = function(callback) {
     return $.ajax({
@@ -38,4 +38,4 @@ DWShopAccount.prototype.logout = function(callback) {
       success: callback, 
       error: this.errorFunction
     });
-}
+};

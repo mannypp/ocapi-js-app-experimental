@@ -13,27 +13,27 @@ DWAPIResource.prototype.errorFunction = null;
 
 DWAPIResource.prototype.registerErrorHandler = function(errorHandler) {
     this.errorFunction = errorHandler;
-}
+};
 
 DWAPIResource.prototype.resourceUrl = function() {
 	return null;
-}
+};
 
 DWAPIResource.prototype.resourceUrlWithId = function(id) {
     return this.resourceUrl() + "/" + id;
-}
+};
 
 DWAPIResource.prototype.resourceUrlWithAction = function(action) {
     return this.resourceUrl() + "/" + action;
-}
+};
 
 DWAPIResource.prototype.retrieveResource = function(callback) {
     return this.findWithUrl(baseURL + this.resourceUrl(), callback);
-}
+};
 
 DWAPIResource.prototype.findById = function(id, callback) {
     return this.findWithUrl(baseURL + this.resourceUrlWithId(id), callback);
-}
+};
 
 DWAPIResource.prototype.findWithUrl = function(url, callback) {
     return $.ajax({
@@ -44,7 +44,7 @@ DWAPIResource.prototype.findWithUrl = function(url, callback) {
       success: callback,
       error: this.errorFunction
     });
-}
+};
 
 function DWShopAccount() {
     DWAPIResource.call(this);
@@ -55,7 +55,7 @@ DWShopAccount.prototype.constructor = DWShopAccount;
 
 DWShopAccount.prototype.resourceUrl = function(id) {
     return "account";
-}
+};
 
 DWShopAccount.prototype.login = function(username, password, callback) {
     var url = secureBaseURL + this.resourceUrlWithAction("login");
@@ -74,7 +74,7 @@ DWShopAccount.prototype.login = function(username, password, callback) {
       success: callback, 
       error: this.errorFunction
     });*/
-}
+};
 
 DWShopAccount.prototype.logout = function(callback) {
     return $.ajax({
@@ -86,7 +86,7 @@ DWShopAccount.prototype.logout = function(callback) {
       success: callback, 
       error: this.errorFunction
     });
-}
+};
 
 function DWShopBasket() {
     DWAPIResource.call(this);
@@ -100,7 +100,7 @@ DWShopBasket.prototype.etag = null;
 
 DWShopBasket.prototype.resourceUrl = function() {
     return "basket/this";
-}
+};
 
 DWShopBasket.prototype.addToBasket = function(productId, quantity, callback) {
 	return $.ajax({
@@ -113,7 +113,7 @@ DWShopBasket.prototype.addToBasket = function(productId, quantity, callback) {
 	  success: callback, 
       error: this.errorFunction
 	});
-}
+};
 
 DWShopBasket.prototype.removeFromBasket = function(productId, callback) {
     var patchData = null;
@@ -126,11 +126,11 @@ DWShopBasket.prototype.removeFromBasket = function(productId, callback) {
         }
     }
     
-    if (patchData == null)
+    if (patchData === null)
         return;
     
     return this.sendUpdateToServer(patchData, callback);
-}
+};
 
 DWShopBasket.prototype.updateQuantity = function(productId, quantity, callback) {
     var patchData = null;
@@ -143,11 +143,11 @@ DWShopBasket.prototype.updateQuantity = function(productId, quantity, callback) 
         }
     }
     
-    if (patchData == null)
+    if (patchData === null)
         return;
         
     return this.sendUpdateToServer(patchData, callback);
-}
+};
 
 DWShopBasket.prototype.updateQuantities = function(updates, callback) {
     var patchData = "{product_items:[";
@@ -167,7 +167,7 @@ DWShopBasket.prototype.updateQuantities = function(updates, callback) {
     patchData += "]}";
     
     return this.sendUpdateToServer(patchData, callback);
-}
+};
 
 DWShopBasket.prototype.sendUpdateToServer = function(patchData, callback) {
     return $.ajax({
@@ -180,11 +180,11 @@ DWShopBasket.prototype.sendUpdateToServer = function(patchData, callback) {
       success: callback,
       error: this.errorFunction
     });
-}
+};
 
 DWShopBasket.prototype.getBasket = function(callback) {
     return this.retrieveResource(callback);
-}
+};
 
 function DWShopCategory() {
     DWAPIResource.call(this);
@@ -195,11 +195,11 @@ DWShopCategory.prototype.constructor = DWShopCategory;
 
 DWShopCategory.prototype.resourceUrl = function() {
 	return "categories";
-}
+};
 
 DWShopCategory.prototype.findById = function(id, callback) {
     return this.findWithUrl(baseURL + this.resourceUrlWithId(id) + "?levels=1", callback);
-}
+};
 
 function DWShopContent() {
     DWAPIResource.call(this);
@@ -210,7 +210,7 @@ DWShopContent.prototype.constructor = DWShopContent;
 
 DWShopContent.prototype.resourceUrl = function() {
     return "content";
-}
+};
 
 function DWShopProduct() {
     DWAPIResource.call(this);
@@ -221,10 +221,10 @@ DWShopProduct.prototype.constructor = DWShopProduct;
 
 DWShopProduct.prototype.resourceUrl = function() {
 	return "products";
-}
+};
 
 DWShopProduct.prototype.findByIdWithExpand = function(id, expand, callback) {
-    var url = baseURL + this.resourceUrlWithId(id) + (expand == null ? "" : "?expand=" + expand);
+    var url = baseURL + this.resourceUrlWithId(id) + (expand === null ? "" : "?expand=" + expand);
     
     return $.ajax({
       type: "GET",
@@ -234,7 +234,7 @@ DWShopProduct.prototype.findByIdWithExpand = function(id, expand, callback) {
       success: callback,
       error: this.errorFunction
     });
-}
+};
 
 DWShopProduct.prototype.loadProductLink = function(link, callback) {
 	return $.ajax({
@@ -245,7 +245,7 @@ DWShopProduct.prototype.loadProductLink = function(link, callback) {
 	  success: callback,
       error: this.errorFunction
 	});
-}
+};
 
 function DWShopProductSearch() {
     DWAPIResource.call(this);
@@ -256,7 +256,7 @@ DWShopProductSearch.prototype.constructor = DWShopProductSearch;
 
 DWShopProductSearch.prototype.resourceUrl = function() {
 	return "product_search";
-}
+};
 
 DWShopProductSearch.prototype.search = function(query, callback) {
 	return $.ajax({
@@ -267,7 +267,7 @@ DWShopProductSearch.prototype.search = function(query, callback) {
 	  success: callback,
       error: this.errorFunction
 	});
-}
+};
 
 function DWShopStore() {
     DWAPIResource.call(this);
@@ -278,4 +278,4 @@ DWShopStore.prototype.constructor = DWShopStore;
 
 DWShopStore.prototype.resourceUrl = function(id) {
     return "stores";
-}
+};

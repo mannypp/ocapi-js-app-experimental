@@ -3,6 +3,12 @@ module.exports = function(grunt) {
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    jshint: {
+      options: {
+        smarttabs: true
+      },
+      all: ['Gruntfile.js', 'cartridge/static/default/js/DW*.js', 'cartridge/static/default/js/dwconfig.js']
+    },
     concat: {
       options: {
         separator: '\n',
@@ -24,11 +30,12 @@ module.exports = function(grunt) {
   });
 
   // Load the plugin that provides the "uglify" task.
+  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   // Default task(s).
-  grunt.registerTask('default', ['concat','uglify']);
+  grunt.registerTask('default', ['jshint','concat','uglify']);
 
 };
 

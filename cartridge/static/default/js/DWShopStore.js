@@ -7,4 +7,4 @@ DWShopStore.prototype.constructor = DWShopStore;
 
 DWShopStore.prototype.resourceUrl = function(id) {
     return "stores";
-}
+};

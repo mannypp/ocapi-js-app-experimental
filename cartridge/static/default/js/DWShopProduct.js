@@ -7,10 +7,10 @@ DWShopProduct.prototype.constructor = DWShopProduct;
 
 DWShopProduct.prototype.resourceUrl = function() {
 	return "products";
-}
+};
 
 DWShopProduct.prototype.findByIdWithExpand = function(id, expand, callback) {
-    var url = baseURL + this.resourceUrlWithId(id) + (expand == null ? "" : "?expand=" + expand);
+    var url = baseURL + this.resourceUrlWithId(id) + (expand === null ? "" : "?expand=" + expand);
     
     return $.ajax({
       type: "GET",
@@ -20,7 +20,7 @@ DWShopProduct.prototype.findByIdWithExpand = function(id, expand, callback) {
       success: callback,
       error: this.errorFunction
     });
-}
+};
 
 DWShopProduct.prototype.loadProductLink = function(link, callback) {
 	return $.ajax({
@@ -31,4 +31,4 @@ DWShopProduct.prototype.loadProductLink = function(link, callback) {
 	  success: callback,
       error: this.errorFunction
 	});
-}
+};
