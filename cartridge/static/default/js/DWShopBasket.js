@@ -12,10 +12,6 @@ DWShopBasket.prototype.resourceUrl = function() {
     return "basket/this";
 }
 
-DWShopBasket.prototype.resourceUrlWithAction = function(action) {
-    return this.resourceUrl() + "/" + action;
-}
-
 DWShopBasket.prototype.addToBasket = function(productId, quantity, callback) {
 	return $.ajax({
 	  type: "POST",

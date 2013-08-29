@@ -2,22 +2,16 @@
 <head>
 	<meta charset=UTF-8>
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
-	<script src="${URLUtils.staticURL('lib/bootstrap/js/bootstrap.min.js')}"></script>
-	<script src="${URLUtils.staticURL('js/dwconfig.js')}"></script>
-    <script src="${URLUtils.staticURL('js/DWAPIResource.js')}"></script>
-    <script src="${URLUtils.staticURL('js/DWShopCategory.js')}"></script>
-	<script src="${URLUtils.staticURL('js/DWShopProduct.js')}"></script>
-	<script src="${URLUtils.staticURL('js/DWShopProductSearch.js')}"></script>
-    <script src="${URLUtils.staticURL('js/DWShopBasket.js')}"></script>
-    <script src="${URLUtils.staticURL('js/DWShopContent.js')}"></script>
-    <script src="${URLUtils.staticURL('js/DWShopStore.js')}"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.js"></script>
+	<script src="${URLUtils.staticURL('lib/bootstrap/js/bootstrap.js')}"></script>
+	<script src="${URLUtils.staticURL('js/dw-ocapi-api.min.js')}"></script>
 
 	<link rel="stylesheet" media="screen" type="text/css" href="${URLUtils.staticURL('lib/bootstrap/css/bootstrap.min.css')}"/>
 	<link rel="stylesheet" type="text/css" href="${URLUtils.staticURL('css/nostyle.css')}"/>
 
 	<script>
 	var currentProduct = null;
+	var currentAccount = null;
 	
 	var lastCategory = "root";
 	var lastProduct = null;
@@ -30,6 +24,7 @@
 	var productSearch = new DWShopProductSearch();
 	var content = new DWShopContent();
 	var store = new DWShopStore();
+	var account = new DWShopAccount();
 	
 	function parseCategoryResponse(response, status, jqXHR) {
         setupCatalogPage();
@@ -262,8 +257,28 @@
         $("#backButton").append("<a class='btn' href='#' onclick='backButton();'>Back</a>");
 	}
 	
-	function showAccount() {
-	   alert("Not implemented yet");
+	function login() {
+	   account.login($("#usernameInput").val(), $("#passwordInput").val(), parseLoginResponse);
+	}
+	
+	function showLogin() {
+       $("#result").empty();
+       $("#result").html("<br/>Username: <input id='usernameInput' type='text' value=''/><br/>Password: <input id='passwordInput' type='password' value=''/><br/><a class='btn' id='loginButton' href='#' onclick='login();'>Login</a>");
+	}
+	
+	function showAccount() {	   
+       var result = $("#result");
+    
+       result.empty();
+       result.html("<a class='btn' id='logoutButton' href='#' onclick='account.logout(parseLogoutResponse);'>Logout</a><br/>");
+       
+       result.append("First Name: <input id='firstNameInput' type='text' value='" + response.first_name + "'/>");
+       result.append("First Name: <input id='firstNameInput' type='text' value='" + response.first_name + "'/>");
+	}
+	
+	function parseLoginResponse(response, status, jqXHR) {
+       showAccount();
+       $("#accountLink").html("My Account");
 	}
 	
 	function backButton() {
@@ -341,6 +356,9 @@
             product.findByIdWithExpand(prdid, "images,variations", parseProductResponse);
 				
 		content.findById("footer-copy", parseFooterResponse);
+		
+		if (currentAccount != null)
+           accountLink.html("My Account");
 	}
 	</script>
 </head>
@@ -353,7 +371,7 @@
 	</div>
     <div class="span1">&nbsp;</div>
     <div class="span2" id="storeLocator"><br/><a href="#" onclick="showStoreLocator();">Store Locator</a></div>
-    <div class="span2" id="account"><br/><a href='#' onclick='showAccount();'>My Account</a></div>
+    <div class="span2" id="account"><br/><a id='accountLink' href='#' onclick='currentAccount == null ? showLogin() : showAccount();'>Login</a></div>
     <div class="span2" id="cartContent"></div>
 </div>
 <div class="row">

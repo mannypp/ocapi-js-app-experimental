@@ -15,6 +15,10 @@ DWAPIResource.prototype.resourceUrlWithId = function(id) {
     return this.resourceUrl() + "/" + id;
 }
 
+DWAPIResource.prototype.resourceUrlWithAction = function(action) {
+    return this.resourceUrl() + "/" + action;
+}
+
 DWAPIResource.prototype.retrieveResource = function(callback) {
     return this.findWithUrl(baseURL + this.resourceUrl(), callback);
 }
