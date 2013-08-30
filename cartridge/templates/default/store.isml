@@ -18,7 +18,7 @@
 	var lastSearch = null;
 	var lastPostalCode = null;
 	
-    var basket = new DWShopBasket();
+  var basket = new DWShopBasket();
 	var category = new DWShopCategory();
 	var product = new DWShopProduct();
 	var productSearch = new DWShopProductSearch();
@@ -27,7 +27,7 @@
 	var account = new DWShopAccount();
 	
 	function parseCategoryResponse(response, status, jqXHR) {
-        setupCatalogPage();
+    setupCatalogPage();
 
 		lastCategory = response.id;
 		lastProduct = null;
@@ -258,38 +258,62 @@
 	}
 	
 	function login() {
-	   account.login($("#usernameInput").val(), $("#passwordInput").val(), parseLoginResponse);
+	  account.login($("#usernameInput").val(), $("#passwordInput").val(), parseLoginResponse).done(
+      function(response, status, jqXHR) {
+        if (jqXHR.status >= 200 && jqXHR.status < 300)
+          account.getProfile(parseGetProfileResponse);
+      });
 	}
 	
 	function showLogin() {
-       $("#result").empty();
-       $("#result").html("<br/>Username: <input id='usernameInput' type='text' value=''/><br/>Password: <input id='passwordInput' type='password' value=''/><br/><a class='btn' id='loginButton' href='#' onclick='login();'>Login</a>");
+     $("#result").empty();
+     $("#result").html("<br/>Username: <input id='usernameInput' type='text' value=''/><br/>Password: <input id='passwordInput' type='password' value=''/><br/><a class='btn' id='loginButton' href='#' onclick='login();'>Login</a>");
 	}
 	
 	function showAccount() {	   
        var result = $("#result");
     
        result.empty();
-       result.html("<a class='btn' id='logoutButton' href='#' onclick='account.logout(parseLogoutResponse);'>Logout</a><br/>");
+       result.html("<a class='btn' id='logoutButton' href='#' onclick='account.logout(parseLogoutResponse);'>Logout</a><br/><br/>");
        
-       result.append("First Name: <input id='firstNameInput' type='text' value='" + response.first_name + "'/>");
-       result.append("First Name: <input id='firstNameInput' type='text' value='" + response.first_name + "'/>");
+       result.append("First Name: <input id='firstNameInput' type='text' value='" + currentAccount.first_name + "'/>");
+       result.append("Last Name: <input id='lastNameInput' type='text' value='" + currentAccount.last_name + "'/>");
 	}
 	
-	function parseLoginResponse(response, status, jqXHR) {
-       showAccount();
-       $("#accountLink").html("My Account");
-	}
+  function parseLoginResponse(response, status, jqXHR) {
+    $("#accountLink").html("My Account");
+  }
+  
+  function parseGetProfileResponse(response, status, jqXHR) {
+    currentAccount = response;
+    showAccount();
+  }
+
+  function parseInitProfileResponse(response, status, jqXHR) {
+    if (response.hasOwnProperty("last_name")) {
+      currentAccount = response;
+      $("#accountLink").html("My Account");
+    }
+    else {
+      $("#accountLink").html("Login");  
+    }
+  }
+
+  function parseLogoutResponse(response, status, jqXHR) {
+    currentAccount = null;
+    $("#accountLink").html("Login");
+    showLogin();
+  }
 	
 	function backButton() {
 		if (lastCategory != null)
 			category.findById(lastCategory, parseCategoryResponse);
-        else if (lastProduct != null)
-            product.findByIdWithExpand(lastProduct, "images,variations", parseProductResponse);
-        else if (lastSearch != null)
-            productSearch.search(lastSearch, parseSearchResponse);
-        else
-            category.findById("root", parseCategoryResponse);
+    else if (lastProduct != null)
+        product.findByIdWithExpand(lastProduct, "images,variations", parseProductResponse);
+    else if (lastSearch != null)
+        productSearch.search(lastSearch, parseSearchResponse);
+    else
+        category.findById("root", parseCategoryResponse);
 	}
 	
 	function parseHomepageContentResponse(response, status, jqXHR) {
@@ -302,7 +326,7 @@
 	}
 	
     function changeCSS(cssFile, cssLinkIndex) {
-        var links = document.getElementsByTagName("link");
+      var links = document.getElementsByTagName("link");
      	var oldlink = links.item(cssLinkIndex);
      	var newlink = document.createElement("link")
      	newlink.setAttribute("href", cssFile);
@@ -327,7 +351,7 @@
     }
 
     function clearError() {
-        $("#errmsg").empty().removeClass();
+      $("#errmsg").empty().removeClass();
     }
     
     function getURLParam(name) {
@@ -335,30 +359,29 @@
     }
 
 	window.onload = function() {
-        var catid = getURLParam("cat");
-        var prdid = getURLParam("prd");
-        var fcn = getURLParam("fcn");
-        
-        basket.registerErrorHandler(handleError);
-        basket.getBasket(parseBasketResponse);
+    var catid = getURLParam("cat");
+    var prdid = getURLParam("prd");
+    var fcn = getURLParam("fcn");
+    
+    basket.registerErrorHandler(handleError);
+    basket.getBasket(parseBasketResponse);
+    account.registerErrorHandler(handleError);
+    account.getProfile(parseInitProfileResponse);
 
-        if (fcn == "storeLocator")
-            showStoreLocator();
-        else if (fcn == "account")
-            showAccount();
-        else if (fcn == "basket")
-            showBasket();
-        else if (catid == "null" && prdid == "null")
-            category.findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
-        else if (catid != "null")
-            category.findById(catid, parseCategoryResponse);
-        else if (prdid != "null")
-            product.findByIdWithExpand(prdid, "images,variations", parseProductResponse);
+    if (fcn == "storeLocator")
+        showStoreLocator();
+    else if (fcn == "account")
+        showAccount();
+    else if (fcn == "basket")
+        showBasket();
+    else if (catid == "null" && prdid == "null")
+        category.findById(lastCategory, parseCategoryResponse); // lastCategory initial value is "root"
+    else if (catid != "null")
+        category.findById(catid, parseCategoryResponse);
+    else if (prdid != "null")
+        product.findByIdWithExpand(prdid, "images,variations", parseProductResponse);
 				
-		content.findById("footer-copy", parseFooterResponse);
-		
-		if (currentAccount != null)
-           accountLink.html("My Account");
+		content.findById("footer-copy", parseFooterResponse);		
 	}
 	</script>
 </head>
@@ -371,7 +394,7 @@
 	</div>
     <div class="span1">&nbsp;</div>
     <div class="span2" id="storeLocator"><br/><a href="#" onclick="showStoreLocator();">Store Locator</a></div>
-    <div class="span2" id="account"><br/><a id='accountLink' href='#' onclick='currentAccount == null ? showLogin() : showAccount();'>Login</a></div>
+    <div class="span2" id="account"><br/><a id='accountLink' href='#' onclick='currentAccount == null ? showLogin() : showAccount();'>&nbsp;</a></div>
     <div class="span2" id="cartContent"></div>
 </div>
 <div class="row">
