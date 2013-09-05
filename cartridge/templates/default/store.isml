@@ -2,16 +2,16 @@
 <head>
 	<meta charset=UTF-8>
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.js"></script>
+  <script src="${URLUtils.staticURL('js/jquery-plugins/jquery.cookie.js')}"></script>
 	<script src="${URLUtils.staticURL('lib/bootstrap/js/bootstrap.js')}"></script>
-	<script src="${URLUtils.staticURL('js/dw-ocapi-api.min.js')}"></script>
+	<script src="${URLUtils.staticURL('js/dw-ocapi-api.js')}"></script>
 
 	<link rel="stylesheet" media="screen" type="text/css" href="${URLUtils.staticURL('lib/bootstrap/css/bootstrap.min.css')}"/>
 	<link rel="stylesheet" type="text/css" href="${URLUtils.staticURL('css/nostyle.css')}"/>
 
 	<script>
 	var currentProduct = null;
-	var currentAccount = null;
 	
 	var lastCategory = "root";
 	var lastProduct = null;
@@ -50,10 +50,13 @@
 			$("#subcategories").append("<div class='well sidebar-nav' id='nav1'>")
 			$("#nav1").append("<ul class='nav nav-list' id='nav2'>")
 			for (var i = 0; i < cat.length; i++) {
-				$("#nav2").append("<li id='" + cat[i].id + "'>");
-				$("#" + cat[i].id).append("<a href='#' onclick='category.findById(\"" + cat[i].id + "\", parseCategoryResponse);'>" + cat[i].name + "</a>");
+			  var catid = cat[i].id;
+        catid = catid.replace("(", "\\(");
+        catid = catid.replace(")", "\\)");
+				$("#nav2").append("<li id='" + catid + "'>");
+				$("#" + catid).append("<a href='#' onclick='category.findById(\"" + catid + "\", parseCategoryResponse);'>" + cat[i].name + "</a>");
 				//if (cat[i].hasOwnProperty("page_description"))
-				//	$("#" + cat[i].id).append("<div>" + cat[i].page_description + "</div>");
+				//	$("#" + catid).append("<div>" + cat[i].page_description + "</div>");
 			}
 		}
 
@@ -181,7 +184,7 @@
 	
 	function parseBasketResponse(response, status, jqXHR) {
 		basket.currentBasket = response;
-        basket.etag = jqXHR.getResponseHeader("ETag");
+    basket.etag = jqXHR.getResponseHeader("ETag");
 		$("#cartContent").html("<br/>Basket: <a id='cartLink' href='#' onclick='showBasket();'>" + response.product_items.length + " Item(s)</a>");
 	}
 	
@@ -191,7 +194,7 @@
 		$("#basket").append("<div class='row'><div class='span12'>&nbsp;</div></div><div class='row'><div class='span12 label label-info'>Shopping Basket</div></div>");		
 		$("#basket").append("<table id='basketTable' class='table table-striped'><thead><tr><th>Quantity</th><th>Product</th><th>Item Price</th><th>Total Price</th><th>Remove</th></tr></thead><tbody id='basketTableBody'/></table>");
 
-        if (basket != null && basket.currentBasket != null) {
+    if (basket != null && basket.currentBasket != null) {
 			var items = basket.currentBasket.product_items;
 			for (var i = 0; i < items.length; i++) {
 				$("#basketTableBody").append("<tr id='" + items[i].product_id + "'/>");
@@ -200,16 +203,16 @@
 				row.append("<td>" + items[i].product_name + "</td><td>" + items[i].base_price + "</td><td>" + items[i].price + "</td>");
 				row.append("<td><a class='btn' href='#' onclick='basket.removeFromBasket(\"" + items[i].product_id + "\",parseBasketResponse).done(showBasket);'>X</a></td>");
 			}
-        }
+    }
         		
 		$("#buttons").append("<a class='btn' href='#' onclick='updateBasketQuantities();'>Update</a>");
 		$("#subtotal").append("<div class='span9'/><div class='span2 label label-info'>Subtotal:</div><div class='span1'>" + basket.currentBasket.product_sub_total + "</div>");
 		$("#total").append("<div class='span9'/><div class='span2 label label-info'>Total:</div><div class='span1'>" + basket.currentBasket.product_total + "</div>");
-        $("#moreButtons").append("<div class='span9'><a class='btn' href='#' onclick='backButton();'>Continue Shopping</a></div>");
-        $("#moreButtons").append("<div class='span3'><a class='btn' href='#' onclick='alert(\"Not implemented yet\");'>Checkout</a></div>");
+    $("#moreButtons").append("<div class='span9'><a class='btn' href='#' onclick='backButton();'>Continue Shopping</a></div>");
+    $("#moreButtons").append("<div class='span3'><a class='btn' href='#' onclick='alert(\"Not implemented yet\");'>Checkout</a></div>");
 	}
 	
-    function updateBasketQuantities() {
+  function updateBasketQuantities() {
        var items = basket.currentBasket.product_items;
        var updates = new Array();
        for (var i = 0; i < items.length; i++) {
@@ -218,7 +221,7 @@
                updates.push({product_id: items[i].product_id, quantity: newQuantity});
        }
        basket.updateQuantities(updates, parseBasketResponse).done(showBasket);
-    }
+  }
     
     function findStores() {
         lastPostalCode = $("#storeLocatorInput").val();
@@ -233,6 +236,8 @@
             $("#storeLocatorContent").append("Enter Postal Code: <input id='storeLocatorInput' type='text' value=''/><a class='btn' id='storeLocatorButton' href='#' onclick='findStores();'>Find</a>");
         else
             store.findWithUrl(baseURL + store.resourceUrl() + '?country_code=US&postal_code=' + lastPostalCode, parseStoreResponse);        
+	
+       $("#result").append("<br/><a class='btn' href='#' onclick='backButton();'>Back</a>");
 	}
 	
 	function parseStoreResponse(response, status, jqXHR) {
@@ -258,6 +263,7 @@
 	}
 	
 	function login() {
+	  deleteAllCookies();
 	  account.login($("#usernameInput").val(), $("#passwordInput").val(), parseLoginResponse).done(
       function(response, status, jqXHR) {
         if (jqXHR.status >= 200 && jqXHR.status < 300)
@@ -266,32 +272,41 @@
 	}
 	
 	function showLogin() {
-     $("#result").empty();
-     $("#result").html("<br/>Username: <input id='usernameInput' type='text' value=''/><br/>Password: <input id='passwordInput' type='password' value=''/><br/><a class='btn' id='loginButton' href='#' onclick='login();'>Login</a>");
+	   var result = $("#result");
+     result.empty();
+     result.html("<br/>Username: <input id='usernameInput' type='text' value=''/><br/>");
+     result.append("Password: <input id='passwordInput' type='password' value=''/><br/>");
+     result.append("<a class='btn' id='loginButton' href='#' onclick='login();'>Login</a>");
+     result.append("<br/><br/><a class='btn' href='#' onclick='backButton();'>Back</a>");
 	}
 	
 	function showAccount() {	   
-       var result = $("#result");
-    
-       result.empty();
-       result.html("<a class='btn' id='logoutButton' href='#' onclick='account.logout(parseLogoutResponse);'>Logout</a><br/><br/>");
-       
-       result.append("First Name: <input id='firstNameInput' type='text' value='" + currentAccount.first_name + "'/>");
-       result.append("Last Name: <input id='lastNameInput' type='text' value='" + currentAccount.last_name + "'/>");
+     var result = $("#result");
+  
+     result.empty();
+     result.html("<a class='btn' id='logoutButton' href='#' onclick='account.logout(parseLogoutResponse);'>Logout</a><br/><br/>");
+     
+     result.append("First Name: <input id='firstNameInput' type='text' value='" + account.currentAccount.first_name + "'/><br/>");
+     result.append("Last Name: <input id='lastNameInput' type='text' value='" + account.currentAccount.last_name + "'/><br/>");
+     result.append("<br/><a class='btn' href='#' onclick='backButton();'>Back</a>");
 	}
 	
   function parseLoginResponse(response, status, jqXHR) {
     $("#accountLink").html("My Account");
+     var cookies = document.cookie.split(";");
+     var i = 0;
   }
   
   function parseGetProfileResponse(response, status, jqXHR) {
-    currentAccount = response;
+    account.currentAccount = response;
+    account.etag = jqXHR.getResponseHeader("ETag");
+    var cookies = document.cookie.split(";");
     showAccount();
   }
 
   function parseInitProfileResponse(response, status, jqXHR) {
     if (response.hasOwnProperty("last_name")) {
-      currentAccount = response;
+      account.currentAccount = response;
       $("#accountLink").html("My Account");
     }
     else {
@@ -300,11 +315,13 @@
   }
 
   function parseLogoutResponse(response, status, jqXHR) {
-    currentAccount = null;
+    account.currentAccount = null;
+    account.etag = null;
+    deleteAllCookies();
     $("#accountLink").html("Login");
     showLogin();
   }
-	
+  
 	function backButton() {
 		if (lastCategory != null)
 			category.findById(lastCategory, parseCategoryResponse);
@@ -325,6 +342,17 @@
 	   $("#footer").html(response.c_body);
 	}
 	
+	function deleteAllCookies() {
+		var cookies = document.cookie.split(";");
+		for(var i=0; i < cookies.length; i++) {
+		    var equals = cookies[i].indexOf("=");
+		    var name = equals > -1 ? cookies[i].substr(0, equals) : cookies[i];
+		    if (name.trim().substr(0,2) == "dw")
+		      $.cookie(name, null);
+		      //document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+		}
+	}
+	
     function changeCSS(cssFile, cssLinkIndex) {
       var links = document.getElementsByTagName("link");
      	var oldlink = links.item(cssLinkIndex);
@@ -338,6 +366,7 @@
     }
 
     function handleError(jqXHR, status, errmsg) {
+      var cookies = document.cookie.split(";");
 	    var errMsg = $("#errmsg");
 	    errMsg.addClass("alert alert-error");
 	    errMsg.html(status);
@@ -359,6 +388,8 @@
     }
 
 	window.onload = function() {
+	  deleteAllCookies();
+    var cookies = document.cookie.split(";");
     var catid = getURLParam("cat");
     var prdid = getURLParam("prd");
     var fcn = getURLParam("fcn");
@@ -394,7 +425,7 @@
 	</div>
     <div class="span1">&nbsp;</div>
     <div class="span2" id="storeLocator"><br/><a href="#" onclick="showStoreLocator();">Store Locator</a></div>
-    <div class="span2" id="account"><br/><a id='accountLink' href='#' onclick='currentAccount == null ? showLogin() : showAccount();'>&nbsp;</a></div>
+    <div class="span2" id="account"><br/><a id='accountLink' href='#' onclick='account.currentAccount == null ? showLogin() : showAccount();'>&nbsp;</a></div>
     <div class="span2" id="cartContent"></div>
 </div>
 <div class="row">
@@ -408,22 +439,26 @@
     <div class="span1">&nbsp;</div>
 </div>
 
-<div class="row">
-    <div class='span1'></div>
-	<div id="styleChangeButtons" class="span11">
-		Change Page Style with Links Below<br/>
-        <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/nostyle.css")}', 3);">No Style</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style1.css")}', 3);">Style 1</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style2.css")}', 3);">Style 2</a>
-		<a href="#" onclick="changeCSS('${URLUtils.staticURL("css/mobile.css")}', 3);">Mobile</a>
-	</div>
-</div>
-
 <div id="errmsg"></div>
 
 <div id="result" class="container-fluid"></div>
 
 <div id="footer" class="container"></div>
+
+<div class="row">
+    <div class='span1'></div>
+  <div id="styleChangeButtons" class="span11">
+    ------------------------------------------------------------------------------------------------------------------<br/>
+    Change Page Style with Links Below. The purpose of these links is to demonstrate that the style of a page can be changed without reloading it from the server.
+    These styles are fairly simple, but the same approach can be used to change to a highly customized style. These links would not be on a customer site. They are 
+    in this prototype to show what is possible.<br/>
+        <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/nostyle.css")}', 3);">No Style</a>
+    <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style1.css")}', 3);">Style 1</a>
+    <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/style2.css")}', 3);">Style 2</a>
+    <a href="#" onclick="changeCSS('${URLUtils.staticURL("css/mobile.css")}', 3);">Mobile</a>
+    <br/><br/><br/>
+  </div>
+</div>
 
 </body>
 </html>

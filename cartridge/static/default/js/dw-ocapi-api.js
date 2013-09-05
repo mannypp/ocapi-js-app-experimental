@@ -53,6 +53,9 @@ function DWShopAccount() {
 DWShopAccount.prototype = new DWAPIResource();
 DWShopAccount.prototype.constructor = DWShopAccount;
 
+DWShopAccount.prototype.currentAccount = null;
+DWShopAccount.prototype.etag = null;
+
 DWShopAccount.prototype.resourceUrl = function(id) {
     return "account";
 };
@@ -94,6 +97,19 @@ DWShopAccount.prototype.getProfile = function(callback) {
     });
 };
 
+DWShopAccount.prototype.updateProfile = function(updatedProfile, callback) {
+    return $.ajax({
+      type: "PATCH",
+      contentType: "application/json",
+      headers: {"If-Match": this.etag, "x-dw-client-id": clientId},
+      url: secureBaseURL + this.resourceUrlWithAction("this"),
+      data: updatedProfile,
+      dataType: "json",
+      success: callback, 
+      error: this.errorFunction
+    });
+};
+
 function DWShopBasket() {
     DWAPIResource.call(this);
 }
@@ -113,11 +129,11 @@ DWShopBasket.prototype.addToBasket = function(productId, quantity, callback) {
 	  type: "POST",
 	  contentType: "application/json",
 	  data: "{product_id: \"" + productId + "\", quantity: " + quantity + "}",
-      headers: {"x-dw-client-id": clientId},
+    headers: {"x-dw-client-id": clientId},
 	  url: baseURL + this.resourceUrlWithAction("add"),
 	  dataType: "json",
 	  success: callback, 
-      error: this.errorFunction
+    error: this.errorFunction
 	});
 };
 

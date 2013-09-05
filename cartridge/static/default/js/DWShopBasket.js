@@ -17,11 +17,11 @@ DWShopBasket.prototype.addToBasket = function(productId, quantity, callback) {
 	  type: "POST",
 	  contentType: "application/json",
 	  data: "{product_id: \"" + productId + "\", quantity: " + quantity + "}",
-      headers: {"x-dw-client-id": clientId},
+    headers: {"x-dw-client-id": clientId},
 	  url: baseURL + this.resourceUrlWithAction("add"),
 	  dataType: "json",
 	  success: callback, 
-      error: this.errorFunction
+    error: this.errorFunction
 	});
 };
 
